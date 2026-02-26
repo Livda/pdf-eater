@@ -1,0 +1,14 @@
+[package]
+name = "pdf-eater"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+actix-multipart = "0.6"
+actix-files = "0.6"
+tokio = { version = "1", features = ["full"] }
+lopdf = "0.32"
+futures-util = "0.3"
+log = "0.4"
+env_logger = "0.11"

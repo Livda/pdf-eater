@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<title>PDF Eater</title>
+		<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiByeD0iMTAiIGZpbGw9IiMxZTFiNGIiLz48ZWxsaXBzZSBjeD0iMjQiIGN5PSIyOSIgcng9IjIxIiByeT0iNi41IiBzdHJva2U9IiM3YzNhZWQiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIiBvcGFjaXR5PSIuNSIvPjxjaXJjbGUgY3g9IjI0IiBjeT0iMjQiIHI9IjEyIiBmaWxsPSIjMGQwZDEyIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMTIiIHN0cm9rZT0iIzdjM2FlZCIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjI0IiByPSI5IiBmaWxsPSIjMWUxYjRiIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iNiIgZmlsbD0iIzJlMTA2NSIvPjxjaXJjbGUgY3g9IjI0IiBjeT0iMjQiIHI9IjMiIGZpbGw9IiMxZTFiNGIiLz48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxLjUiIGZpbGw9IiNhNzhiZmEiIG9wYWNpdHk9Ii4zIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMsOCkgcm90YXRlKDMwKSI+PHJlY3Qgd2lkdGg9IjkiIGhlaWdodD0iMTEiIHJ4PSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIuOSIvPjxwb2x5Z29uIHBvaW50cz0iNiwwIDksMCA5LDMuNSIgZmlsbD0icmdiYSgwLDAsMCwuMTUpIi8+PHRleHQgeD0iMSIgeT0iOSIgZm9udC1zaXplPSIzLjUiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiM3YzNhZWQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5QREY8L3RleHQ+PC9nPjxjaXJjbGUgY3g9IjkiIGN5PSIxNyIgcj0iMS44IiBmaWxsPSIjYTc4YmZhIiBvcGFjaXR5PSIuNyIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iMTMiIHI9IjEuMiIgZmlsbD0iI2E3OGJmYSIgb3BhY2l0eT0iLjUiLz48Y2lyY2xlIGN4PSI3IiBjeT0iMzEiIHI9IjEuMiIgZmlsbD0iI2E3OGJmYSIgb3BhY2l0eT0iLjQiLz48L3N2Zz4="/>
+		<link rel="stylesheet" href="/static/style.css" />
+	</head>
+	<body>
+
+		<button class="theme-toggle" id="theme-toggle" aria-label="Changer de thème">
+			<span id="theme-icon">☀️</span>
+		</button>
+
+		<div class="card">
+			<header>
+				<div class="logo">
+					<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<ellipse cx="24" cy="29" rx="21" ry="6.5" stroke="#7c3aed" stroke-width="1.5" fill="none" opacity=".5"/>
+						<circle cx="24" cy="24" r="12" fill="#0d0d12"/>
+						<circle cx="24" cy="24" r="12" stroke="#7c3aed" stroke-width="2.5" fill="none"/>
+						<circle cx="24" cy="24" r="9"  fill="#1e1b4b"/>
+						<circle cx="24" cy="24" r="6"  fill="#2e1065"/>
+						<circle cx="24" cy="24" r="3"  fill="#1e1b4b"/>
+						<circle cx="20" cy="20" r="1.5" fill="#a78bfa" opacity=".3"/>
+						<g transform="translate(33,8) rotate(30)">
+							<rect x="0" y="0" width="9" height="11" rx="1.5" fill="white" opacity=".9"/>
+							<polygon points="6,0 9,0 9,3.5" fill="rgba(0,0,0,.15)"/>
+							<polygon points="6,0 6,3.5 9,3.5" fill="rgba(255,255,255,.4)"/>
+							<text x="1" y="9" font-size="3.5" font-weight="800" fill="#7c3aed" font-family="sans-serif">PDF</text>
+						</g>
+						<circle cx="9"  cy="17" r="1.8" fill="#a78bfa" opacity=".7"/>
+						<circle cx="40" cy="13" r="1.2" fill="#a78bfa" opacity=".5"/>
+						<circle cx="7"  cy="31" r="1.2" fill="#a78bfa" opacity=".4"/>
+						<circle cx="14" cy="10" r=".9"  fill="#c4b5fd" opacity=".5"/>
+						<circle cx="38" cy="32" r=".9"  fill="#c4b5fd" opacity=".35"/>
+					</svg>
+				</div>
+				<h1>PDF Eater</h1>
+				<p class="subtitle">100 % local, aucun upload tiers.</p>
+			</header>
+
+			<div class="tabs">
+				<button class="tab active" data-tab="merge">Fusionner</button>
+				<button class="tab" data-tab="extract">Extraire</button>
+				<button class="tab" data-tab="rotate">Rotation</button>
+				<button class="tab" data-tab="delete">Supprimer</button>
+				<button class="tab" data-tab="reorder">Réorganiser</button>
+			</div>
+
+			<!-- ══ FUSION ══════════════════════════════════════════ -->
+			<div id="tab-merge" class="tab-content is-active">
+				<div class="dropzone" id="dropzone">
+					<input type="file" id="file-input" accept="application/pdf" multiple />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text">Appuyez ou glissez vos PDF ici</div>
+				</div>
+				<div id="file-list"></div>
+				<p class="drag-hint" id="drag-hint" style="display:none">↕ Glissez pour réordonner</p>
+				<button id="merge-btn" class="action-btn merge-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3"/>
+						<polyline points="15 3 12 6 9 3"/>
+						<line x1="12" y1="6" x2="12" y2="14"/>
+					</svg>
+					Fusionner les PDF
+				</button>
+				<div id="merge-progress" class="progress-wrap">
+					<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
+					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
+				</div>
+				<div id="merge-status" class="status"></div>
+				<a id="merge-download" class="download-link" download="merged.pdf">⬇ Télécharger le PDF fusionné</a>
+			</div>
+
+			<!-- ══ EXTRACTION ══════════════════════════════════════ -->
+			<div id="tab-extract" class="tab-content">
+				<div class="dropzone" id="extract-dropzone">
+					<input type="file" id="extract-file-input" accept="application/pdf" />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text" id="extract-dropzone-text">Appuyez ou glissez un PDF ici</div>
+				</div>
+				<div id="extract-controls" style="display:none; margin-top:1.25rem;">
+					<label class="page-label">
+						Pages à extraire
+						<span id="extract-page-count" class="page-count"></span>
+					</label>
+					<input
+						type="text" id="extract-page-input" class="page-number-input"
+						placeholder="ex : 1, 3, 5-8" value="1"
+						inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false"
+					/>
+					<p class="page-hint">Séparez par des virgules, utilisez <code>-</code> pour les plages (ex&nbsp;: <code>1-3, 5, 7</code>)</p>
+				</div>
+				<button id="extract-btn" class="action-btn extract-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+						<polyline points="7 10 12 15 17 10"/>
+						<line x1="12" y1="15" x2="12" y2="3"/>
+					</svg>
+					Extraire les pages
+				</button>
+				<div id="extract-progress" class="progress-wrap">
+					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-extract"></div></div>
+					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
+				</div>
+				<div id="extract-status" class="status"></div>
+				<a id="extract-download" class="download-link">⬇ Télécharger les pages extraites</a>
+			</div>
+
+			<!-- ══ ROTATION ════════════════════════════════════════ -->
+			<div id="tab-rotate" class="tab-content">
+				<div class="dropzone" id="rotate-dropzone">
+					<input type="file" id="rotate-file-input" accept="application/pdf" />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text" id="rotate-dropzone-text">Appuyez ou glissez un PDF ici</div>
+				</div>
+				<div id="rotate-controls" style="display:none; margin-top:1.25rem;">
+					<p class="page-label" style="margin-bottom:.75rem;">Pages à faire pivoter</p>
+					<div id="rotate-list"></div>
+					<button id="rotate-add-btn" class="add-rotation-btn">+ Ajouter une page</button>
+				</div>
+				<button id="rotate-btn" class="action-btn rotate-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21.5 2v6h-6"/>
+						<path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+					</svg>
+					Appliquer les rotations
+				</button>
+				<div id="rotate-progress" class="progress-wrap">
+					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-rotate"></div></div>
+					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
+				</div>
+				<div id="rotate-status" class="status"></div>
+				<a id="rotate-download" class="download-link">⬇ Télécharger le PDF pivoté</a>
+			</div>
+
+			<!-- ══ SUPPRESSION ══════════════════════════════════════ -->
+			<div id="tab-delete" class="tab-content">
+				<div class="dropzone" id="delete-dropzone">
+					<input type="file" id="delete-file-input" accept="application/pdf" />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text" id="delete-dropzone-text">Appuyez ou glissez un PDF ici</div>
+				</div>
+				<div id="delete-controls" style="display:none; margin-top:1.25rem;">
+					<label class="page-label">
+						Pages à supprimer
+						<span id="delete-page-count" class="page-count"></span>
+					</label>
+					<input
+						type="text" id="delete-page-input" class="page-number-input"
+						placeholder="ex : 1, 3, 5-8"
+						inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false"
+					/>
+					<p class="page-hint">Séparez par des virgules, utilisez <code>-</code> pour les plages (ex&nbsp;: <code>1-3, 5, 7</code>)</p>
+				</div>
+				<button id="delete-btn" class="action-btn delete-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="3 6 5 6 21 6"/>
+						<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+						<path d="M10 11v6M14 11v6"/>
+						<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+					</svg>
+					Supprimer les pages
+				</button>
+				<div id="delete-progress" class="progress-wrap">
+					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-delete"></div></div>
+					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
+				</div>
+				<div id="delete-status" class="status"></div>
+				<a id="delete-download" class="download-link">⬇ Télécharger le PDF modifié</a>
+			</div>
+
+			<!-- ══ RÉORGANISATION ══════════════════════════════════ -->
+			<div id="tab-reorder" class="tab-content">
+				<div class="dropzone" id="reorder-dropzone">
+					<input type="file" id="reorder-file-input" accept="application/pdf" />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text" id="reorder-dropzone-text">Appuyez ou glissez un PDF ici</div>
+				</div>
+				<div id="reorder-controls" style="display:none; margin-top:1.25rem;">
+					<p class="page-label" style="margin-bottom:.75rem;">
+						Glissez les pages dans l'ordre souhaité
+						<span id="reorder-page-count" class="page-count"></span>
+					</p>
+					<div id="reorder-list"></div>
+					<p class="reorder-drag-hint" id="reorder-drag-hint">↕ Glissez pour réordonner</p>
+				</div>
+				<button id="reorder-btn" class="action-btn reorder-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="3"  y1="6"  x2="21" y2="6"/>
+						<line x1="3"  y1="12" x2="21" y2="12"/>
+						<line x1="3"  y1="18" x2="21" y2="18"/>
+						<polyline points="17 1 21 5 17 9"/>
+						<line x1="21" y1="5" x2="9"  y2="5"/>
+					</svg>
+					Réorganiser les pages
+				</button>
+				<div id="reorder-progress" class="progress-wrap">
+					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-reorder"></div></div>
+					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
+				</div>
+				<div id="reorder-status" class="status"></div>
+				<a id="reorder-download" class="download-link">⬇ Télécharger le PDF réorganisé</a>
+			</div>
+		</div>
+
+		<script src="/static/app.js"></script>
+	</body>
+</html>
