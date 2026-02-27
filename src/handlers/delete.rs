@@ -3,6 +3,7 @@ use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
 
 use crate::pdf::delete::delete_pages;
+use crate::pdf::utils::parse_page_ranges;
 use crate::{MAX_FILE_SIZE, MAX_FIELD_SIZE};
 
 pub async fn delete_handler(mut payload: Multipart) -> HttpResponse {
@@ -51,7 +52,7 @@ pub async fn delete_handler(mut payload: Multipart) -> HttpResponse {
 
     let page_numbers = match parse_page_ranges(&pages_input) {
         Ok(p) => p,
-        Err(e) => return HttpResponse::BadRequest().body(e),
+        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
     };
 
     match delete_pages(&pdf_data, &page_numbers) {
@@ -64,29 +65,3 @@ pub async fn delete_handler(mut payload: Multipart) -> HttpResponse {
     }
 }
 
-fn parse_page_ranges(input: &str) -> Result<Vec<u32>, String> {
-    let mut pages = Vec::new();
-    for part in input.split(',') {
-        let part = part.trim();
-        if part.contains('-') {
-            let mut iter = part.splitn(2, '-');
-            let start: u32 = iter.next().unwrap_or("").trim().parse()
-                .map_err(|_| format!("Plage invalide : '{}'", part))?;
-            let end: u32 = iter.next().unwrap_or("").trim().parse()
-                .map_err(|_| format!("Plage invalide : '{}'", part))?;
-            if start > end {
-                return Err(format!("Plage invalide : {} > {}", start, end));
-            }
-            for n in start..=end {
-                pages.push(n);
-            }
-        } else {
-            let n: u32 = part.parse()
-                .map_err(|_| format!("Numéro de page invalide : '{}'", part))?;
-            pages.push(n);
-        }
-    }
-    pages.sort_unstable();
-    pages.dedup();
-    Ok(pages)
-}

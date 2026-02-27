@@ -2,7 +2,8 @@ use actix_multipart::Multipart;
 use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
 
-use crate::pdf::extract::{extract_pages, parse_page_ranges};
+use crate::pdf::extract::extract_pages;
+use crate::pdf::utils::parse_page_ranges;
 use crate::{MAX_FIELD_SIZE, MAX_FILE_SIZE};
 
 pub async fn extract_handler(mut payload: Multipart) -> HttpResponse {
@@ -73,18 +74,18 @@ pub async fn extract_handler(mut payload: Multipart) -> HttpResponse {
     }
 
     let Some(data) = pdf_data else {
-        return HttpResponse::BadRequest().body("Fichier PDF requis.");
+        return HttpResponse::BadRequest().body("Fichier PDF requis.".to_string());
     };
 
-    let page_numbers = match parse_page_ranges(&pages_input) {
+    let page_numbers: Vec<u32> = match parse_page_ranges(&pages_input) {
         Ok(p) => p,
-        Err(e) => return HttpResponse::BadRequest().body(e),
+        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
     };
 
     // Limite le nombre de pages à extraire
     if page_numbers.len() > 500 {
         return HttpResponse::BadRequest()
-            .body("Maximum 500 pages par extraction.");
+            .body("Maximum 500 pages par extraction.".to_string());
     }
 
     let filename = if page_numbers.len() == 1 {
