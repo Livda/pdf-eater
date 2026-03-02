@@ -1,66 +1,65 @@
-use std::{env, fs};
+// build.rs — Génère les noms de fichiers assets versionnés pour le cache-busting.
+//
+// En release : copie style.css → static/style.{hash}.css
+//              copie app.js   → static/app.{hash}.js
+//              exporte STYLE_CSS_FILE et APP_JS_FILE via cargo:rustc-env
+//
+// En debug   : utilise les noms d'origine (style.css / app.js) pour un
+//              rechargement rapide sans copie inutile.
 
-fn fnv1a_hex(data: &[u8]) -> String {
-    const OFFSET: u64 = 0xcbf29ce484222325;
-    const PRIME:  u64 = 0x00000100000001b3;
-    let hash = data.iter().fold(OFFSET, |h, &b| {
-        (h ^ b as u64).wrapping_mul(PRIME)
-    });
-    format!("{:016x}", hash)[..8].to_owned()
-}
+use std::fs;
 
-/// Supprime les anciennes versions hachées d'un asset.
-/// Conserve le fichier original (sans hash) et le fichier `keep`.
-/// Un fichier haché a la forme : prefix + 8 caractères hex + suffix.
-fn cleanup_old_hashed(dir: &str, prefix: &str, suffix: &str, keep: &str) {
-    let Ok(entries) = fs::read_dir(dir) else { return };
-    for entry in entries.flatten() {
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        // Vérifie que le nom a la forme "prefix<8-hex-chars>suffix"
-        let hash_part = name
-            .strip_prefix(prefix)
-            .and_then(|s| s.strip_suffix(&suffix[1..])); // suffix commence par '.'
-        let is_hashed = hash_part.map(|h| h.len() == 8 && h.chars().all(|c| c.is_ascii_hexdigit()))
-            .unwrap_or(false);
-        if is_hashed && name.as_ref() != keep {
-            let _ = fs::remove_file(entry.path());
-        }
+/// Hash FNV-1a 64-bit, déterministe, sans dépendance externe.
+/// Retourne les 8 premiers caractères hex (32 bits d'entropie — largement
+/// suffisant pour du cache-busting).
+fn fnv1a_short(data: &[u8]) -> String {
+    let mut hash: u64 = 14_695_981_039_346_656_037;
+    for &byte in data {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(1_099_511_628_211);
     }
+    format!("{:016x}", hash)[..8].to_string()
 }
 
 fn main() {
+    // Déclenche la recompilation si ces fichiers changent.
     println!("cargo:rerun-if-changed=static/style.css");
     println!("cargo:rerun-if-changed=static/app.js");
 
-    let profile = env::var("PROFILE").unwrap_or_default();
+    let profile = std::env::var("PROFILE").unwrap_or_default();
+    let is_release = profile == "release";
 
-    let css_data = fs::read("static/style.css").expect("static/style.css introuvable");
-    let js_data  = fs::read("static/app.js").expect("static/app.js introuvable");
+    if is_release {
+        // ── Mode release : hash + copie des fichiers versionnés ──────────
+        let css_data = fs::read("static/style.css")
+            .expect("build.rs : impossible de lire static/style.css");
+        let js_data = fs::read("static/app.js")
+            .expect("build.rs : impossible de lire static/app.js");
 
-    let (css_file, js_file) = if profile == "release" {
-        let css_hash = fnv1a_hex(&css_data);
-        let js_hash  = fnv1a_hex(&js_data);
+        let css_hash = fnv1a_short(&css_data);
+        let js_hash  = fnv1a_short(&js_data);
 
-        let css_name = format!("style.{}.css", css_hash);
-        let js_name  = format!("app.{}.js",    js_hash);
+        let css_filename = format!("style.{}.css", css_hash);
+        let js_filename  = format!("app.{}.js",    js_hash);
 
-        // Supprime les anciennes versions hachées
-        cleanup_old_hashed("static", "style.", ".css", &css_name);
-        cleanup_old_hashed("static", "app.",   ".js",  &js_name);
+        // Copie les fichiers hachés dans static/ pour qu'actix-files
+        // puisse les servir à l'exécution.
+        fs::write(format!("static/{}", css_filename), &css_data)
+            .unwrap_or_else(|e| panic!("build.rs : écriture {} échouée : {}", css_filename, e));
+        fs::write(format!("static/{}", js_filename), &js_data)
+            .unwrap_or_else(|e| panic!("build.rs : écriture {} échouée : {}", js_filename, e));
 
-        // Copie avec le nom haché (écrase si déjà correct)
-        fs::copy("static/style.css", format!("static/{}", css_name))
-            .expect("Impossible de copier style.css");
-        fs::copy("static/app.js", format!("static/{}", js_name))
-            .expect("Impossible de copier app.js");
+        println!("cargo:rustc-env=STYLE_CSS_FILE={}", css_filename);
+        println!("cargo:rustc-env=APP_JS_FILE={}", js_filename);
 
-        (css_name, js_name)
+        eprintln!("build.rs [release] assets versionnés :");
+        eprintln!("  style.css → {}", css_filename);
+        eprintln!("  app.js    → {}", js_filename);
     } else {
-        // En dev : les fichiers originaux, pas de renommage
-        ("style.css".to_owned(), "app.js".to_owned())
-    };
+        // ── Mode debug : noms d'origine, aucune copie ────────────────────
+        println!("cargo:rustc-env=STYLE_CSS_FILE=style.css");
+        println!("cargo:rustc-env=APP_JS_FILE=app.js");
 
-    println!("cargo:rustc-env=STYLE_CSS_FILE={}", css_file);
-    println!("cargo:rustc-env=APP_JS_FILE={}",    js_file);
+        eprintln!("build.rs [debug] assets non versionnés (style.css / app.js)");
+    }
 }
