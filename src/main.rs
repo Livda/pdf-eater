@@ -1,10 +1,33 @@
 mod handlers;
 mod pdf;
 
+use std::sync::OnceLock;
+
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use actix_files::Files;
 
-const INDEX_HTML: &str = include_str!("../static/index.html");
+// Noms des fichiers assets déterminés à la compilation par build.rs.
+// En release : "style.a3f2c891.css" / "app.b7d41e02.js"
+// En debug   : "style.css" / "app.js"
+const STYLE_CSS_FILE: &str = env!("STYLE_CSS_FILE");
+const APP_JS_FILE:    &str = env!("APP_JS_FILE");
+
+// HTML avec les noms d'assets versionnés injectés, construit une seule fois.
+static INDEX_HTML: OnceLock<String> = OnceLock::new();
+
+fn versioned_html() -> &'static str {
+    INDEX_HTML.get_or_init(|| {
+        include_str!("../static/index.html")
+            .replace(
+                "/static/style.css\"",
+                &format!("/static/{}\"", STYLE_CSS_FILE),
+            )
+            .replace(
+                "/static/app.js\"",
+                &format!("/static/{}\"", APP_JS_FILE),
+            )
+    })
+}
 
 // 1 Go en octets
 pub const MAX_FILE_SIZE: usize = 1024 * 1024 * 1024;
@@ -24,7 +47,7 @@ async fn index() -> HttpResponse {
             "Content-Security-Policy",
             "default-src 'self'; script-src 'self'; style-src 'self';",
         ))
-        .body(INDEX_HTML)
+        .body(versioned_html())
 }
 
 #[actix_web::main]
@@ -32,6 +55,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
     log::info!("🚀 PDF Eater démarré → http://localhost:8080");
+    log::info!("   Assets : {} | {}", STYLE_CSS_FILE, APP_JS_FILE);
 
     HttpServer::new(|| {
         let json_cfg = web::JsonConfig::default().limit(MAX_FILE_SIZE);

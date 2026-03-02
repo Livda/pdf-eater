@@ -518,7 +518,8 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	.file-order-btns { display: flex; }
 	.drag-hint { display: none !important; }
 	.action-btn { font-size: .95rem; padding: .9rem 1rem; }
-	.tab { font-size: .78rem; padding: .55rem .3rem; }
+	.tabs { flex-wrap: wrap; }
+	.tab { flex: 1 1 auto; min-width: calc(33% - .4rem); font-size: .78rem; padding: .55rem .3rem; }
 }
 
 @media (max-width: 360px) {

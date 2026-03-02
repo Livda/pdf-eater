@@ -1,6 +1,6 @@
 # PDF Eater
 
-Outil de manipulation de PDF en ligne de commande locale. Aucune donnée ne quitte votre machine — tout est traité côté serveur sur `localhost`.
+Outil de manipulation de PDF dans le navigateur. Aucune donnée ne quitte votre machine — tout est traité côté serveur sur `localhost`.
 
 ## Fonctionnalités
 
@@ -16,7 +16,7 @@ Toutes les opérations affichent une barre de progression pendant l'upload.
 
 ## Stack
 
-- **Backend** : Rust — [actix-web](https://actix.rs/) + [lopdf](https://github.com/J-F-Liu/lopdf)
+- **Backend** : Rust — [actix-web](https://actix.rs/) + [lopdf](https://github.com/J-F-Liu/lopdf) 0.38
 - **Frontend** : HTML/CSS/JS vanilla, sans dépendance externe
 - **Thèmes** : clair/sombre automatique (`prefers-color-scheme`) avec bascule manuelle
 - **Mobile** : responsive, compatible iOS (safe-area-inset, tap targets 44 px)
@@ -25,28 +25,32 @@ Toutes les opérations affichent une barre de progression pendant l'upload.
 
 ```
 pdf-eater/
+├── build.rs                    # Versionnage des assets (hash dans le nom en release)
+├── Cargo.toml
+├── Dockerfile
+├── .gitignore
 ├── src/
 │   ├── main.rs                 # Serveur actix-web, routes, sécurité HTTP
-│   ├── handlers/
+│   ├── handlers/               # Validation des requêtes multipart
 │   │   ├── mod.rs
 │   │   ├── merge.rs
 │   │   ├── extract.rs
 │   │   ├── rotate.rs
 │   │   ├── delete.rs
 │   │   └── reorder.rs
-│   └── pdf/
+│   └── pdf/                    # Logique métier PDF
 │       ├── mod.rs
-│       ├── utils.rs            # remap_object, find_pages_root, save_to_bytes
+│       ├── error.rs            # PdfError (thiserror)
+│       ├── utils.rs            # Helpers partagés : load_document, copy_objects, …
 │       ├── merge.rs
-│       ├── extract.rs          # parse_page_ranges
+│       ├── extract.rs
 │       ├── rotate.rs
 │       ├── delete.rs
 │       └── reorder.rs
-├── static/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-└── Cargo.toml
+└── static/
+    ├── index.html
+    ├── style.css
+    └── app.js
 ```
 
 ## Installation
@@ -54,43 +58,79 @@ pdf-eater/
 ### Prérequis
 
 - [Rust](https://rustup.rs/) 1.70+
+- [qpdf](https://qpdf.sourceforge.io/) — normalisation des PDFs avec xref en stream
+
+```bash
+# macOS
+brew install qpdf
+
+# Debian / Ubuntu
+sudo apt install qpdf
+```
 
 ### Dépendances `Cargo.toml`
 
 ```toml
 [dependencies]
-actix-web      = "4"
-actix-files    = "0.6"
+actix-web       = "4"
+actix-files     = "0.6"
 actix-multipart = "0.6"
-tokio          = { version = "1", features = ["full"] }
-lopdf          = "0.32"
-futures-util   = "0.3"
-log            = "0.4"
-env_logger     = "0.11"
+tokio           = { version = "1", features = ["full"] }
+lopdf           = "0.38"
+futures-util    = "0.3"
+log             = "0.4"
+env_logger      = "0.11"
+thiserror       = "1"
+tempfile        = "3"
 ```
 
-### Lancer le serveur
+### Lancer en développement
 
 ```bash
-cargo run --release
+cargo run
 ```
 
-Le serveur démarre sur `http://localhost:8080`. Pour activer les logs :
+### Lancer en release
 
 ```bash
-RUST_LOG=info cargo run --release
+cargo build --release
+./target/release/pdf-eater
 ```
+
+Le serveur démarre sur `http://localhost:8080`. Pour activer les logs de débogage :
+
+```bash
+RUST_LOG=pdf_eater=debug ./target/release/pdf-eater
+```
+
+### Docker
+
+```bash
+docker build -t pdf-eater .
+docker run -p 8080:8080 pdf-eater
+```
+
+## Versionnage des assets
+
+En build release, `build.rs` calcule un hash FNV-1a 8 caractères du contenu de chaque asset et génère des fichiers renommés dans `static/` :
+
+```
+static/style.css  →  static/style.a3f2c891.css
+static/app.js     →  static/app.b7d41e02.js
+```
+
+Le HTML servi référence automatiquement les fichiers versionnés. Les anciens fichiers hachés sont supprimés à chaque build. En développement (`cargo run`), les noms originaux sont utilisés sans modification.
 
 ## Sécurité
 
 Chaque requête est validée avant traitement :
 
 - **Content-Type** : `application/pdf` obligatoire
-- **Magic bytes** : vérification de `%PDF` en début de fichier
+- **Magic bytes** : vérification de `%PDF-` en début de fichier
 - **Taille** : max 1 Go par fichier, 20 fichiers par requête
 - **Champs texte** : max 1 Ko (numéros de pages, angles, ordre)
 
-En-têtes HTTP appliqués sur toutes les réponses :
+En-têtes HTTP appliqués sur toutes les réponses HTML :
 
 ```
 X-Content-Type-Options: nosniff
@@ -99,8 +139,6 @@ X-XSS-Protection: 1; mode=block
 Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self';
 ```
-
-Le serveur écoute sur `127.0.0.1:8080` (loopback uniquement — pas exposé sur le réseau local).
 
 ## Syntaxe des plages de pages
 
@@ -115,8 +153,10 @@ Les onglets Extraire, Supprimer et Rotation acceptent la même syntaxe :
 
 ## Notes d'implémentation
 
-**Manipulation PDF avec lopdf** — `Document::save()` ne peut écrire que sur disque. Chaque opération utilise donc un fichier temporaire dans `std::env::temp_dir()`, protégé par un guard `Drop` qui garantit sa suppression même en cas de panique.
+**Compatibilité PDF** — certains PDFs valides (scanners, iOS, exporteurs d'image) utilisent des xref en object streams (PDF 1.5+) que lopdf ne sait pas parser directement. `load_document()` dans `utils.rs` tente d'abord lopdf, et en cas d'échec appelle `qpdf --object-streams=disable` pour convertir les xref binaires en xref ASCII avant de réessayer. Si qpdf est absent, l'erreur lopdf originale est retournée.
 
-**Reconstruction du document** — toutes les opérations (extraction, suppression, réorganisation) reconstruisent un document propre plutôt que de modifier le document source. Le mapping `old_id → new_id` est appliqué récursivement sur tous les objets (`Dictionary`, `Array`, `Stream`) via `remap_object()` pour que toutes les références internes (fonts, images, annotations) restent valides.
+**Reconstruction du document** — toutes les opérations reconstruisent un document propre plutôt que de modifier le document source en place. Le mapping `old_id → new_id` est appliqué récursivement sur tous les objets (`Dictionary`, `Array`, `Stream`) via `remap_object()` pour que les références internes (fontes, images, annotations) restent valides. Les helpers partagés (`copy_objects`, `insert_pages_node`, `insert_catalog`, `set_parent`, `finalize`) sont centralisés dans `pdf/utils.rs`.
+
+**Fichiers temporaires** — `Document::save()` (lopdf) écrit obligatoirement sur disque. Chaque sérialisation utilise un `tempfile::NamedTempFile` dont la suppression est garantie par le `Drop` automatique, y compris en cas de panique.
 
 **Comptage des pages côté client** — l'onglet Réorganiser détecte le nombre de pages sans envoyer le fichier au serveur. Il lit deux tranches de 256 Ko (début et fin du fichier) et y cherche `/Count N` par expression régulière. Le plus grand `/Count` trouvé correspond au nœud `/Pages` racine.
