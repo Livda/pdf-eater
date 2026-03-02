@@ -125,6 +125,48 @@ function hideProgress(wrapId) {
 	document.getElementById(wrapId).classList.remove('visible');
 }
 
+
+// ══════════════════════════════════════════════════════
+// APERÇU PDF
+// ══════════════════════════════════════════════════════
+const _previewUrls = Object.create(null); // tabId → blobURL
+
+/**
+ * Affiche le PDF dans le panneau d'aperçu du tab donné.
+ * Révoque l'ancienne blob URL pour libérer la mémoire.
+ */
+function showPreview(file, tabId) {
+	const panel = document.getElementById(tabId + '-preview');
+	if (!panel) return;
+	if (_previewUrls[tabId]) URL.revokeObjectURL(_previewUrls[tabId]);
+	_previewUrls[tabId] = URL.createObjectURL(file);
+	const frame = panel.querySelector('.pdf-preview-frame');
+	frame.src = _previewUrls[tabId];
+	frame.removeAttribute('hidden');
+	panel.querySelector('.pdf-preview-name').textContent = file.name;
+	const toggle = panel.querySelector('.pdf-preview-toggle');
+	toggle.dataset.state = 'open';
+	toggle.textContent = '▲ Masquer';
+	panel.removeAttribute('hidden');
+}
+
+// Délégation globale pour les boutons toggle (évite d'enregistrer N listeners)
+document.addEventListener('click', e => {
+	const btn = e.target.closest('.pdf-preview-toggle');
+	if (!btn) return;
+	const frame = btn.closest('.pdf-preview').querySelector('.pdf-preview-frame');
+	const opening = btn.dataset.state !== 'open';
+	if (opening) {
+		frame.removeAttribute('hidden');
+		btn.textContent = '▲ Masquer';
+		btn.dataset.state = 'open';
+	} else {
+		frame.setAttribute('hidden', '');
+		btn.textContent = '▼ Afficher';
+		btn.dataset.state = 'closed';
+	}
+});
+
 // ══════════════════════════════════════════════════════
 // FUSION
 // ══════════════════════════════════════════════════════
@@ -172,6 +214,7 @@ function renderList() {
 			<span class="file-icon">📄</span>
 			<span class="file-name" title="${entry.file.name}">${entry.file.name}</span>
 			<span class="file-size">${formatSize(entry.file.size)}</span>
+			<button class="file-preview-btn" aria-label="Aperçu" title="Aperçu">👁</button>
 			<div class="file-order-btns">
 				<button class="file-order-btn btn-up"   aria-label="Monter">▲</button>
 				<button class="file-order-btn btn-down" aria-label="Descendre">▼</button>
@@ -181,6 +224,11 @@ function renderList() {
 		item.querySelector('.file-remove').addEventListener('click', () => { files.splice(idx, 1); renderList(); });
 		item.querySelector('.btn-up')    .addEventListener('click', () => moveFile(idx, idx - 1));
 		item.querySelector('.btn-down')  .addEventListener('click', () => moveFile(idx, idx + 1));
+		item.querySelector('.file-preview-btn').addEventListener('click', () => {
+			showPreview(entry.file, 'merge');
+			document.querySelectorAll('.file-preview-btn').forEach(b => b.classList.remove('active'));
+			item.querySelector('.file-preview-btn').classList.add('active');
+		});
 
 		if (!touch) {
 			item.addEventListener('dragstart', handleDragStart);
@@ -255,6 +303,7 @@ function setExtractFile(file) {
 	extractDownload.style.display = 'none';
 	extractPageInput.value = '1';
 	hideProgress('extract-progress');
+	showPreview(file, 'extract');
 }
 
 extractDropzone.addEventListener('dragover',  e => { e.preventDefault(); extractDropzone.classList.add('over'); });
@@ -323,6 +372,7 @@ function setRotateFile(file) {
 	rotateDownload.style.display = 'none';
 	rotateRows = [{ page: 1, angle: 90 }];
 	hideProgress('rotate-progress');
+	showPreview(file, 'rotate');
 	renderRotateRows();
 }
 
@@ -424,6 +474,7 @@ function setDeleteFile(file) {
 	deleteDownload.style.display = 'none';
 	deletePageInput.value = '';
 	hideProgress('delete-progress');
+	showPreview(file, 'delete');
 }
 
 deleteDropzone.addEventListener('dragover',  e => { e.preventDefault(); deleteDropzone.classList.add('over'); });
@@ -466,155 +517,159 @@ deleteBtn.addEventListener('click', async () => {
 	}
 });
 
-// ══════════════════════════════════════════════════════
-// RÉORGANISATION
-// ══════════════════════════════════════════════════════
-const reorderDropzone  = document.getElementById('reorder-dropzone');
-const reorderFileInput = document.getElementById('reorder-file-input');
-const reorderControls  = document.getElementById('reorder-controls');
-const reorderListEl    = document.getElementById('reorder-list');
-const reorderBtn       = document.getElementById('reorder-btn');
-const reorderStatus    = document.getElementById('reorder-status');
-const reorderDownload  = document.getElementById('reorder-download');
-const reorderDropText  = document.getElementById('reorder-dropzone-text');
-const reorderPageCount = document.getElementById('reorder-page-count');
-const reorderDragHint  = document.getElementById('reorder-drag-hint');
+if (document.getElementById('reorder-dropzone')) {
+	// ══════════════════════════════════════════════════════
+	// RÉORGANISATION
+	// ══════════════════════════════════════════════════════
+	const reorderDropzone  = document.getElementById('reorder-dropzone');
+	const reorderFileInput = document.getElementById('reorder-file-input');
+	const reorderControls  = document.getElementById('reorder-controls');
+	const reorderListEl    = document.getElementById('reorder-list');
+	const reorderBtn       = document.getElementById('reorder-btn');
+	const reorderStatus    = document.getElementById('reorder-status');
+	const reorderDownload  = document.getElementById('reorder-download');
+	const reorderDropText  = document.getElementById('reorder-dropzone-text');
+	const reorderPageCount = document.getElementById('reorder-page-count');
+	const reorderDragHint  = document.getElementById('reorder-drag-hint');
 
-let reorderFile  = null;
-let reorderPages = [];
+	let reorderFile  = null;
+	let reorderPages = [];
 
-function setReorderFile(file) {
-	if (!file || file.type !== 'application/pdf') return;
-	reorderFile = file;
-	reorderDropText.innerHTML = `<strong>${file.name}</strong><br><span style="color:var(--muted);font-size:.8rem">${formatSize(file.size)}</span>`;
-	hideProgress('reorder-progress');
+	function setReorderFile(file) {
+		if (!file || file.type !== 'application/pdf') return;
+		reorderFile = file;
+		reorderDropText.innerHTML = `<strong>${file.name}</strong><br><span style="color:var(--muted);font-size:.8rem">${formatSize(file.size)}</span>`;
+		hideProgress('reorder-progress');
+		showPreview(file, 'reorder');
 
-	countPdfPages(file).then(n => {
-		reorderPages = Array.from({ length: n }, (_, i) => ({ origPage: i + 1 }));
-		reorderPageCount.textContent = `${n} page${n > 1 ? 's' : ''}`;
-		reorderControls.style.display = 'block';
-		reorderBtn.disabled = false;
-		reorderStatus.textContent = '';
-		reorderStatus.className = 'status';
-		reorderDownload.style.display = 'none';
-		renderReorderList();
-	}).catch(() => {
-		reorderStatus.className = 'status error';
-		reorderStatus.textContent = '✗ Impossible de lire ce PDF.';
-	});
-}
-
-function countPdfPages(file) {
-	// Lit une tranche du fichier et la décode en latin-1 (safe pour le binaire PDF)
-	function readSlice(blob) {
-		return new Promise((res, rej) => {
-			const r = new FileReader();
-			r.onload  = e => res(new TextDecoder('latin1').decode(new Uint8Array(e.target.result)));
-			r.onerror = rej;
-			r.readAsArrayBuffer(blob);
+		countPdfPages(file).then(n => {
+			reorderPages = Array.from({ length: n }, (_, i) => ({ origPage: i + 1 }));
+			reorderPageCount.textContent = `${n} page${n > 1 ? 's' : ''}`;
+			reorderControls.style.display = 'block';
+			reorderBtn.disabled = false;
+			reorderStatus.textContent = '';
+			reorderStatus.className = 'status';
+			reorderDownload.style.display = 'none';
+			renderReorderList();
+		}).catch(() => {
+			reorderStatus.className = 'status error';
+			reorderStatus.textContent = '✗ Impossible de lire ce PDF.';
 		});
 	}
 
-	// Le noeud /Pages avec /Count est souvent en fin de fichier.
-	// On lit 256 Ko au debut ET 256 Ko a la fin pour couvrir tous les cas.
-	const CHUNK = 256 * 1024;
-	return Promise.all([
-		readSlice(file.slice(0, CHUNK)),
-		readSlice(file.slice(Math.max(0, file.size - CHUNK))),
-	]).then(([head, tail]) => {
-		const matches = [...(head + tail).matchAll(/\/Count\s+(\d+)/g)];
-		if (!matches.length) throw new Error('Structure PDF non reconnue');
-		// Le plus grand /Count est toujours le total du document
-		return Math.max(...matches.map(m => parseInt(m[1])));
-	});
-}
-
-function moveReorderPage(fromIdx, toIdx) {
-	if (toIdx < 0 || toIdx >= reorderPages.length) return;
-	const [moved] = reorderPages.splice(fromIdx, 1);
-	reorderPages.splice(toIdx, 0, moved);
-	renderReorderList();
-}
-
-function renderReorderList() {
-	reorderListEl.innerHTML = '';
-	const touch = isTouch();
-
-	reorderPages.forEach((page, idx) => {
-		const card = document.createElement('div');
-		card.className   = 'page-card' + (touch ? '' : ' draggable-desktop');
-		card.draggable   = !touch;
-		card.dataset.idx = idx;
-
-		const isOriginalPos = page.origPage === idx + 1;
-		card.innerHTML = `
-			<div class="page-card-num">${idx + 1}</div>
-			<span class="page-card-label">Page ${idx + 1}</span>
-			<span class="page-card-orig">${isOriginalPos ? '' : `← orig. ${page.origPage}`}</span>
-			<div class="page-card-order-btns">
-				<button class="page-card-order-btn btn-up"   aria-label="Monter">▲</button>
-				<button class="page-card-order-btn btn-down" aria-label="Descendre">▼</button>
-			</div>`;
-
-		card.querySelector('.btn-up')  .addEventListener('click', () => moveReorderPage(idx, idx - 1));
-		card.querySelector('.btn-down').addEventListener('click', () => moveReorderPage(idx, idx + 1));
-
-		if (!touch) {
-			card.addEventListener('dragstart', reorderDragStart);
-			card.addEventListener('dragover',  reorderDragOver);
-			card.addEventListener('drop',      reorderDrop);
-			card.addEventListener('dragend',   reorderDragEnd);
+	function countPdfPages(file) {
+		// Lit une tranche du fichier et la décode en latin-1 (safe pour le binaire PDF)
+		function readSlice(blob) {
+			return new Promise((res, rej) => {
+				const r = new FileReader();
+				r.onload  = e => res(new TextDecoder('latin1').decode(new Uint8Array(e.target.result)));
+				r.onerror = rej;
+				r.readAsArrayBuffer(blob);
+			});
 		}
-		reorderListEl.appendChild(card);
-	});
 
-	reorderDragHint.style.display = (!isTouch() && reorderPages.length > 1) ? 'block' : 'none';
-}
+		// Le noeud /Pages avec /Count est souvent en fin de fichier.
+		// On lit 256 Ko au debut ET 256 Ko a la fin pour couvrir tous les cas.
+		const CHUNK = 256 * 1024;
+		return Promise.all([
+			readSlice(file.slice(0, CHUNK)),
+			readSlice(file.slice(Math.max(0, file.size - CHUNK))),
+		]).then(([head, tail]) => {
+			const matches = [...(head + tail).matchAll(/\/Count\s+(\d+)/g)];
+			if (!matches.length) throw new Error('Structure PDF non reconnue');
+			// Le plus grand /Count est toujours le total du document
+			return Math.max(...matches.map(m => parseInt(m[1])));
+		});
+	}
 
-let reorderDragSrcIdx = null;
-function reorderDragStart(e) { reorderDragSrcIdx = +this.dataset.idx; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
-function reorderDragOver(e)  { e.preventDefault(); document.querySelectorAll('.page-card').forEach(el => el.classList.remove('drag-over')); this.classList.add('drag-over'); }
-function reorderDrop(e) {
-	e.preventDefault();
-	const t = +this.dataset.idx;
-	if (reorderDragSrcIdx !== null && reorderDragSrcIdx !== t) {
-		const [moved] = reorderPages.splice(reorderDragSrcIdx, 1);
-		reorderPages.splice(t, 0, moved);
+	function moveReorderPage(fromIdx, toIdx) {
+		if (toIdx < 0 || toIdx >= reorderPages.length) return;
+		const [moved] = reorderPages.splice(fromIdx, 1);
+		reorderPages.splice(toIdx, 0, moved);
 		renderReorderList();
 	}
-}
-function reorderDragEnd() { document.querySelectorAll('.page-card').forEach(el => el.classList.remove('dragging', 'drag-over')); reorderDragSrcIdx = null; }
 
-reorderDropzone.addEventListener('dragover',  e => { e.preventDefault(); reorderDropzone.classList.add('over'); });
-reorderDropzone.addEventListener('dragleave', () => reorderDropzone.classList.remove('over'));
-reorderDropzone.addEventListener('drop', e => { e.preventDefault(); reorderDropzone.classList.remove('over'); setReorderFile(e.dataTransfer.files[0]); });
-reorderFileInput.addEventListener('change', () => { setReorderFile(reorderFileInput.files[0]); reorderFileInput.value = ''; });
+	function renderReorderList() {
+		reorderListEl.innerHTML = '';
+		const touch = isTouch();
 
-reorderBtn.addEventListener('click', async () => {
-	if (!reorderFile || reorderPages.length === 0) return;
-	reorderBtn.disabled = true;
-	reorderDownload.style.display = 'none';
-	reorderStatus.className = 'status';
-	reorderStatus.innerHTML = '<span class="spinner"></span> Envoi en cours…';
+		reorderPages.forEach((page, idx) => {
+			const card = document.createElement('div');
+			card.className   = 'page-card' + (touch ? '' : ' draggable-desktop');
+			card.draggable   = !touch;
+			card.dataset.idx = idx;
 
-	const formData = new FormData();
-	formData.append('file', reorderFile, reorderFile.name);
-	formData.append('order', reorderPages.map(p => p.origPage).join(','));
-	const ui = initProgress('reorder-progress', 'progress-fill-reorder');
+			const isOriginalPos = page.origPage === idx + 1;
+			card.innerHTML = `
+				<div class="page-card-num">${idx + 1}</div>
+				<span class="page-card-label">Page ${idx + 1}</span>
+				<span class="page-card-orig">${isOriginalPos ? '' : `← orig. ${page.origPage}`}</span>
+				<div class="page-card-order-btns">
+					<button class="page-card-order-btn btn-up"   aria-label="Monter">▲</button>
+					<button class="page-card-order-btn btn-down" aria-label="Descendre">▼</button>
+				</div>`;
 
-	try {
-		const blob = await xhrUpload('/reorder', formData, ui);
-		const url = URL.createObjectURL(blob);
-		reorderDownload.href = url;
-		reorderDownload.download = reorderFile.name.replace(/\.pdf$/i, '') + '_réorganisé.pdf';
-		reorderDownload.style.display = 'flex';
-		reorderStatus.className = 'status ok';
-		reorderStatus.textContent = '✓ Réorganisation appliquée !';
-	} catch (err) {
-		reorderStatus.className = 'status error';
-		reorderStatus.textContent = '✗ ' + err.message;
-		hideProgress('reorder-progress');
-	} finally {
-		reorderBtn.disabled = false;
+			card.querySelector('.btn-up')  .addEventListener('click', () => moveReorderPage(idx, idx - 1));
+			card.querySelector('.btn-down').addEventListener('click', () => moveReorderPage(idx, idx + 1));
+
+			if (!touch) {
+				card.addEventListener('dragstart', reorderDragStart);
+				card.addEventListener('dragover',  reorderDragOver);
+				card.addEventListener('drop',      reorderDrop);
+				card.addEventListener('dragend',   reorderDragEnd);
+			}
+			reorderListEl.appendChild(card);
+		});
+
+		reorderDragHint.style.display = (!isTouch() && reorderPages.length > 1) ? 'block' : 'none';
 	}
-});
+
+	let reorderDragSrcIdx = null;
+	function reorderDragStart(e) { reorderDragSrcIdx = +this.dataset.idx; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+	function reorderDragOver(e)  { e.preventDefault(); document.querySelectorAll('.page-card').forEach(el => el.classList.remove('drag-over')); this.classList.add('drag-over'); }
+	function reorderDrop(e) {
+		e.preventDefault();
+		const t = +this.dataset.idx;
+		if (reorderDragSrcIdx !== null && reorderDragSrcIdx !== t) {
+			const [moved] = reorderPages.splice(reorderDragSrcIdx, 1);
+			reorderPages.splice(t, 0, moved);
+			renderReorderList();
+		}
+	}
+	function reorderDragEnd() { document.querySelectorAll('.page-card').forEach(el => el.classList.remove('dragging', 'drag-over')); reorderDragSrcIdx = null; }
+
+	reorderDropzone.addEventListener('dragover',  e => { e.preventDefault(); reorderDropzone.classList.add('over'); });
+	reorderDropzone.addEventListener('dragleave', () => reorderDropzone.classList.remove('over'));
+	reorderDropzone.addEventListener('drop', e => { e.preventDefault(); reorderDropzone.classList.remove('over'); setReorderFile(e.dataTransfer.files[0]); });
+	reorderFileInput.addEventListener('change', () => { setReorderFile(reorderFileInput.files[0]); reorderFileInput.value = ''; });
+
+	reorderBtn.addEventListener('click', async () => {
+		if (!reorderFile || reorderPages.length === 0) return;
+		reorderBtn.disabled = true;
+		reorderDownload.style.display = 'none';
+		reorderStatus.className = 'status';
+		reorderStatus.innerHTML = '<span class="spinner"></span> Envoi en cours…';
+
+		const formData = new FormData();
+		formData.append('file', reorderFile, reorderFile.name);
+		formData.append('order', reorderPages.map(p => p.origPage).join(','));
+		const ui = initProgress('reorder-progress', 'progress-fill-reorder');
+
+		try {
+			const blob = await xhrUpload('/reorder', formData, ui);
+			const url = URL.createObjectURL(blob);
+			reorderDownload.href = url;
+			reorderDownload.download = reorderFile.name.replace(/\.pdf$/i, '') + '_réorganisé.pdf';
+			reorderDownload.style.display = 'flex';
+			reorderStatus.className = 'status ok';
+			reorderStatus.textContent = '✓ Réorganisation appliquée !';
+		} catch (err) {
+			reorderStatus.className = 'status error';
+			reorderStatus.textContent = '✗ ' + err.message;
+			hideProgress('reorder-progress');
+		} finally {
+			reorderBtn.disabled = false;
+		}
+	});
+
+}

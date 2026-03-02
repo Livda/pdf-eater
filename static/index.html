@@ -60,7 +60,18 @@
 					<div class="dropzone-text">Appuyez ou glissez vos PDF ici</div>
 				</div>
 				<div id="file-list"></div>
-				<p class="drag-hint" id="drag-hint" style="display:none">↕ Glissez pour réordonner</p>
+				<div class="pdf-preview" id="merge-preview" hidden>
+					<div class="pdf-preview-bar">
+						<span class="pdf-preview-name"></span>
+						<button class="pdf-preview-toggle" data-state="open">▲ Masquer</button>
+					</div>
+					<iframe class="pdf-preview-frame" title="Aperçu PDF"></iframe>
+				</div>
+				<p class="drag-hint" id="drag-hint" class="initially-hidden">↕ Glissez pour réordonner</p>
+				<div id="merge-progress" class="progress-wrap">
+					<div class="progress-bar"><div class="progress-bar-fill"></div></div>
+					<span class="progress-label">Progression <span></span></span>
+				</div>
 				<button id="merge-btn" class="action-btn merge-btn" disabled>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3"/>
@@ -69,10 +80,6 @@
 					</svg>
 					Fusionner les PDF
 				</button>
-				<div id="merge-progress" class="progress-wrap">
-					<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
-					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
-				</div>
 				<div id="merge-status" class="status"></div>
 				<a id="merge-download" class="download-link" download="merged.pdf">⬇ Télécharger le PDF fusionné</a>
 			</div>
@@ -84,17 +91,36 @@
 					<span class="dropzone-icon">📄</span>
 					<div class="dropzone-text" id="extract-dropzone-text">Appuyez ou glissez un PDF ici</div>
 				</div>
-				<div id="extract-controls" style="display:none; margin-top:1.25rem;">
+
+				<div class="pdf-preview" id="extract-preview" hidden>
+					<div class="pdf-preview-bar">
+						<span class="pdf-preview-name"></span>
+						<button class="pdf-preview-toggle" data-state="open">▲ Masquer</button>
+					</div>
+					<iframe class="pdf-preview-frame" title="Aperçu PDF"></iframe>
+				</div>
+				<div id="extract-controls" class="controls-panel">
 					<label class="page-label">
 						Pages à extraire
 						<span id="extract-page-count" class="page-count"></span>
 					</label>
 					<input
-						type="text" id="extract-page-input" class="page-number-input"
-						placeholder="ex : 1, 3, 5-8" value="1"
-						inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false"
+						type="text"
+						id="extract-page-input"
+						class="page-number-input"
+						placeholder="ex : 1, 3, 5-8"
+						value="1"
+						inputmode="text"
+						autocomplete="off"
+						autocorrect="off"
+						spellcheck="false"
 					/>
 					<p class="page-hint">Séparez par des virgules, utilisez <code>-</code> pour les plages (ex&nbsp;: <code>1-3, 5, 7</code>)</p>
+				</div>
+
+				<div id="extract-progress" class="progress-wrap">
+					<div class="progress-bar"><div class="progress-bar-fill progress-fill-extract"></div></div>
+					<span class="progress-label">Progression <span></span></span>
 				</div>
 				<button id="extract-btn" class="action-btn extract-btn" disabled>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -104,10 +130,6 @@
 					</svg>
 					Extraire les pages
 				</button>
-				<div id="extract-progress" class="progress-wrap">
-					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-extract"></div></div>
-					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
-				</div>
 				<div id="extract-status" class="status"></div>
 				<a id="extract-download" class="download-link">⬇ Télécharger les pages extraites</a>
 			</div>
@@ -119,10 +141,23 @@
 					<span class="dropzone-icon">📄</span>
 					<div class="dropzone-text" id="rotate-dropzone-text">Appuyez ou glissez un PDF ici</div>
 				</div>
-				<div id="rotate-controls" style="display:none; margin-top:1.25rem;">
-					<p class="page-label" style="margin-bottom:.75rem;">Pages à faire pivoter</p>
+
+				<div class="pdf-preview" id="rotate-preview" hidden>
+					<div class="pdf-preview-bar">
+						<span class="pdf-preview-name"></span>
+						<button class="pdf-preview-toggle" data-state="open">▲ Masquer</button>
+					</div>
+					<iframe class="pdf-preview-frame" title="Aperçu PDF"></iframe>
+				</div>
+				<div id="rotate-controls" class="controls-panel">
+					<p class="page-label">Pages à faire pivoter</p>
 					<div id="rotate-list"></div>
 					<button id="rotate-add-btn" class="add-rotation-btn">+ Ajouter une page</button>
+				</div>
+
+				<div id="rotate-progress" class="progress-wrap">
+					<div class="progress-bar"><div class="progress-bar-fill progress-fill-rotate"></div></div>
+					<span class="progress-label">Progression <span></span></span>
 				</div>
 				<button id="rotate-btn" class="action-btn rotate-btn" disabled>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -131,12 +166,49 @@
 					</svg>
 					Appliquer les rotations
 				</button>
-				<div id="rotate-progress" class="progress-wrap">
-					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-rotate"></div></div>
-					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
-				</div>
 				<div id="rotate-status" class="status"></div>
 				<a id="rotate-download" class="download-link">⬇ Télécharger le PDF pivoté</a>
+			</div>
+
+			<!-- ══ RÉORGANISATION ══════════════════════════════════ -->
+			<div id="tab-reorder" class="tab-content">
+				<div class="dropzone" id="reorder-dropzone">
+					<input type="file" id="reorder-file-input" accept="application/pdf" />
+					<span class="dropzone-icon">📄</span>
+					<div class="dropzone-text" id="reorder-dropzone-text">Appuyez ou glissez un PDF ici</div>
+				</div>
+
+				<div class="pdf-preview" id="reorder-preview" hidden>
+					<div class="pdf-preview-bar">
+						<span class="pdf-preview-name"></span>
+						<button class="pdf-preview-toggle" data-state="open">▲ Masquer</button>
+					</div>
+					<iframe class="pdf-preview-frame" title="Aperçu PDF"></iframe>
+				</div>
+
+				<div id="reorder-controls" class="controls-panel">
+					<label class="page-label">
+						Ordre des pages
+						<span id="reorder-page-count" class="page-count"></span>
+					</label>
+					<p class="drag-hint" id="reorder-drag-hint">↕ Glissez pour réordonner</p>
+					<div id="reorder-list"></div>
+				</div>
+
+				<div id="reorder-progress" class="progress-wrap">
+					<div class="progress-bar"><div class="progress-bar-fill progress-fill-reorder"></div></div>
+					<span class="progress-label">Progression <span></span></span>
+				</div>
+				<button id="reorder-btn" class="action-btn reorder-btn" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="8"  y1="6"  x2="21" y2="6"/><line x1="8"  y1="12" x2="21" y2="12"/>
+						<line x1="8"  y1="18" x2="21" y2="18"/>
+						<polyline points="3 6 4 7 6 4"/><polyline points="3 12 4 13 6 10"/><polyline points="3 18 4 19 6 16"/>
+					</svg>
+					Appliquer l'ordre
+				</button>
+				<div id="reorder-status" class="status"></div>
+				<a id="reorder-download" class="download-link">⬇ Télécharger le PDF réorganisé</a>
 			</div>
 
 			<!-- ══ SUPPRESSION ══════════════════════════════════════ -->
@@ -146,17 +218,35 @@
 					<span class="dropzone-icon">📄</span>
 					<div class="dropzone-text" id="delete-dropzone-text">Appuyez ou glissez un PDF ici</div>
 				</div>
-				<div id="delete-controls" style="display:none; margin-top:1.25rem;">
+
+				<div class="pdf-preview" id="delete-preview" hidden>
+					<div class="pdf-preview-bar">
+						<span class="pdf-preview-name"></span>
+						<button class="pdf-preview-toggle" data-state="open">▲ Masquer</button>
+					</div>
+					<iframe class="pdf-preview-frame" title="Aperçu PDF"></iframe>
+				</div>
+				<div id="delete-controls" class="controls-panel">
 					<label class="page-label">
 						Pages à supprimer
 						<span id="delete-page-count" class="page-count"></span>
 					</label>
 					<input
-						type="text" id="delete-page-input" class="page-number-input"
+						type="text"
+						id="delete-page-input"
+						class="page-number-input"
 						placeholder="ex : 1, 3, 5-8"
-						inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false"
+						inputmode="text"
+						autocomplete="off"
+						autocorrect="off"
+						spellcheck="false"
 					/>
 					<p class="page-hint">Séparez par des virgules, utilisez <code>-</code> pour les plages (ex&nbsp;: <code>1-3, 5, 7</code>)</p>
+				</div>
+
+				<div id="delete-progress" class="progress-wrap">
+					<div class="progress-bar"><div class="progress-bar-fill progress-fill-delete"></div></div>
+					<span class="progress-label">Progression <span></span></span>
 				</div>
 				<button id="delete-btn" class="action-btn delete-btn" disabled>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -167,45 +257,8 @@
 					</svg>
 					Supprimer les pages
 				</button>
-				<div id="delete-progress" class="progress-wrap">
-					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-delete"></div></div>
-					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
-				</div>
 				<div id="delete-status" class="status"></div>
 				<a id="delete-download" class="download-link">⬇ Télécharger le PDF modifié</a>
-			</div>
-
-			<!-- ══ RÉORGANISATION ══════════════════════════════════ -->
-			<div id="tab-reorder" class="tab-content">
-				<div class="dropzone" id="reorder-dropzone">
-					<input type="file" id="reorder-file-input" accept="application/pdf" />
-					<span class="dropzone-icon">📄</span>
-					<div class="dropzone-text" id="reorder-dropzone-text">Appuyez ou glissez un PDF ici</div>
-				</div>
-				<div id="reorder-controls" style="display:none; margin-top:1.25rem;">
-					<p class="page-label" style="margin-bottom:.75rem;">
-						Glissez les pages dans l'ordre souhaité
-						<span id="reorder-page-count" class="page-count"></span>
-					</p>
-					<div id="reorder-list"></div>
-					<p class="reorder-drag-hint" id="reorder-drag-hint">↕ Glissez pour réordonner</p>
-				</div>
-				<button id="reorder-btn" class="action-btn reorder-btn" disabled>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="3"  y1="6"  x2="21" y2="6"/>
-						<line x1="3"  y1="12" x2="21" y2="12"/>
-						<line x1="3"  y1="18" x2="21" y2="18"/>
-						<polyline points="17 1 21 5 17 9"/>
-						<line x1="21" y1="5" x2="9"  y2="5"/>
-					</svg>
-					Réorganiser les pages
-				</button>
-				<div id="reorder-progress" class="progress-wrap">
-					<div class="progress-bar-track"><div class="progress-bar-fill progress-fill-reorder"></div></div>
-					<div class="progress-label"><span>Upload</span><span>0 %</span></div>
-				</div>
-				<div id="reorder-status" class="status"></div>
-				<a id="reorder-download" class="download-link">⬇ Télécharger le PDF réorganisé</a>
 			</div>
 		</div>
 

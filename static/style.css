@@ -1,5 +1,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── Classes utilitaires (remplacent les style="" inline) ──── */
+.initially-hidden { display: none; }
+.controls-panel   { display: none; margin-top: 1.25rem; }
+
 /* ── Thème sombre (défaut) ───────────────────── */
 :root {
 	--bg:        #0d0d12;
@@ -56,6 +60,72 @@
 }
 
 /* ── Thème système ───────────────────────────── */
+
+/* ── Aperçu PDF ──────────────────────────────────────── */
+.pdf-preview {
+	margin-top: 1rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+}
+.pdf-preview-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .5rem;
+	padding: .45rem .75rem;
+	background: var(--surface2);
+	border-bottom: 1px solid var(--border);
+	font-size: .78rem;
+	color: var(--muted);
+	user-select: none;
+}
+.pdf-preview-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: .78rem;
+	color: var(--text);
+}
+.pdf-preview-toggle {
+	background: none;
+	border: none;
+	color: var(--accent2);
+	cursor: pointer;
+	font-size: .75rem;
+	padding: 0;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: color .15s;
+}
+.pdf-preview-toggle:hover { color: var(--accent); }
+.pdf-preview-frame {
+	width: 100%;
+	height: 480px;
+	border: none;
+	display: block;
+	background: var(--surface);
+}
+[hidden] { display: none !important; }
+
+/* Bouton aperçu dans la liste de fichiers (fusion) */
+.file-preview-btn {
+	background: none;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	color: var(--muted);
+	cursor: pointer;
+	font-size: .85rem;
+	line-height: 1;
+	padding: .2rem .35rem;
+	transition: border-color .15s, color .15s, background .15s;
+	flex-shrink: 0;
+}
+.file-preview-btn:hover  { border-color: var(--accent2); color: var(--accent2); }
+.file-preview-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 @media (prefers-color-scheme: light) {
 	:root:not([data-theme]) {
 		--bg:        #f0f0f7;
@@ -518,8 +588,8 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	.file-order-btns { display: flex; }
 	.drag-hint { display: none !important; }
 	.action-btn { font-size: .95rem; padding: .9rem 1rem; }
-	.tabs { flex-wrap: wrap; }
-	.tab { flex: 1 1 auto; min-width: calc(33% - .4rem); font-size: .78rem; padding: .55rem .3rem; }
+	.pdf-preview-frame { height: 320px; }
+	.tab { font-size: .78rem; padding: .55rem .3rem; }
 }
 
 @media (max-width: 360px) {
@@ -540,30 +610,55 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 .tab-content          { display: none; }
 .tab-content.is-active { display: block; }
 
-/* ── Réorganisation ──────────────────────────── */
-:root {
-	--accent-reorder:  #10b981;
-	--accent-reorder2: #059669;
+/* ── Barre de progression ────────────────────────────────── */
+.progress-wrap {
+	margin-top: 1.25rem;
+	display: none;
 }
-[data-theme="light"] {
-	--accent-reorder:  #059669;
-	--accent-reorder2: #047857;
+.progress-wrap.visible { display: block; }
+
+.progress-bar {
+	height: 8px;
+	background: var(--surface2);
+	border-radius: 999px;
+	overflow: hidden;
+	border: 1px solid var(--border);
 }
-@media (prefers-color-scheme: light) {
-	:root:not([data-theme]) {
-		--accent-reorder:  #059669;
-		--accent-reorder2: #047857;
-	}
+.progress-bar-fill {
+	height: 100%;
+	width: 0%;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--accent), var(--accent2));
+	transition: width .25s ease;
+}
+.progress-bar-fill.processing {
+	animation: progress-pulse 1.2s ease-in-out infinite;
+}
+.progress-fill-extract { background: linear-gradient(90deg, var(--accent-extract),  var(--accent-extract2)); }
+.progress-fill-rotate  { background: linear-gradient(90deg, var(--accent-rotate),   var(--accent-rotate2));  }
+.progress-fill-delete  { background: linear-gradient(90deg, var(--accent-delete),   var(--accent-delete2));  }
+.progress-fill-reorder { background: linear-gradient(90deg, var(--accent),          var(--accent2));          }
+
+@keyframes progress-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+.progress-label {
+	display: flex;
+	justify-content: flex-end;
+	font-size: .75rem;
+	color: var(--muted);
+	margin-top: .3rem;
 }
 
+/* ── Bouton réorganiser ──────────────────────────────────── */
 .reorder-btn {
-	background: linear-gradient(135deg, var(--accent-reorder), var(--accent-reorder2));
+	background: linear-gradient(135deg, var(--accent), var(--accent2));
 	color: #fff;
-	box-shadow: 0 6px 20px rgba(16,185,129,.3);
+	box-shadow: var(--shadow-btn);
 }
-.reorder-btn:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(16,185,129,.4); }
+.reorder-btn:hover:not(:disabled) { box-shadow: var(--shadow-btn-hover); }
 
-#reorder-list { margin-top: 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+/* ── Page cards (réorganisation) ─────────────────────────── */
+#reorder-list { display: flex; flex-direction: column; margin-top: .75rem; }
 
 .page-card {
 	display: flex;
@@ -572,32 +667,43 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	background: var(--surface2);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
-	padding: .6rem .9rem;
+	padding: .65rem .9rem;
+	margin-bottom: .5rem;
 	transition: border-color .2s, box-shadow .2s, opacity .2s, background .3s;
-	user-select: none;
 }
-.page-card.draggable-desktop { cursor: grab; }
-.page-card.draggable-desktop:active { cursor: grabbing; }
+.page-card.draggable-desktop         { cursor: grab; }
+.page-card.draggable-desktop:active  { cursor: grabbing; }
 .page-card.dragging  { opacity: .4; }
-.page-card.drag-over {
-	border-color: var(--accent-reorder);
-	box-shadow: 0 0 0 2px rgba(16,185,129,.3);
-}
+.page-card.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,99,255,.3); }
+
 .page-card-num {
-	flex-shrink: 0;
 	width: 28px; height: 28px;
-	border-radius: 7px;
-	background: var(--accent-reorder);
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--accent), var(--accent2));
 	color: #fff;
-	font-size: .72rem;
+	font-size: .78rem;
 	font-weight: 700;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	display: flex; align-items: center; justify-content: center;
+	flex-shrink: 0;
 }
-.page-card-label { flex: 1; font-size: .85rem; color: var(--text); font-weight: 500; }
-.page-card-orig  { font-size: .72rem; color: var(--muted); flex-shrink: 0; font-style: italic; }
-.page-card-order-btns { display: none; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.page-card-label {
+	flex: 1;
+	font-size: .82rem;
+	color: var(--text);
+	min-width: 0;
+}
+.page-card-orig {
+	font-size: .72rem;
+	color: var(--accent2);
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+.page-card-order-btns {
+	display: none;
+	flex-direction: column;
+	gap: 2px;
+	flex-shrink: 0;
+}
 .page-card-order-btn {
 	background: none;
 	border: 1px solid var(--border);
@@ -605,71 +711,15 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	color: var(--muted);
 	cursor: pointer;
 	font-size: .65rem;
+	padding: 3px 5px;
 	transition: background .15s, color .15s, border-color .15s;
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	min-width: 26px; min-height: 22px;
 	display: flex; align-items: center; justify-content: center;
 }
-.page-card-order-btn:active { background: var(--accent-reorder); color: white; border-color: var(--accent-reorder); }
-.reorder-drag-hint { font-size: .75rem; color: var(--muted); text-align: center; margin-top: .4rem; }
+.page-card-order-btn:active { background: var(--accent); color: white; border-color: var(--accent); }
 
 @media (max-width: 480px) {
 	.page-card-order-btns { display: flex; }
-	.reorder-drag-hint    { display: none !important; }
 }
-@media (hover: none) {
-	.page-card-order-btns { display: flex; }
-	.reorder-drag-hint    { display: none !important; }
-}
-
-/* ── Barre de progression ────────────────────── */
-.progress-wrap {
-	margin-top: 1rem;
-	display: none;
-	flex-direction: column;
-	gap: .35rem;
-}
-.progress-wrap.visible { display: flex; }
-
-.progress-bar-track {
-	width: 100%;
-	height: 6px;
-	background: var(--border);
-	border-radius: 99px;
-	overflow: hidden;
-}
-.progress-bar-fill {
-	height: 100%;
-	width: 0%;
-	border-radius: 99px;
-	background: linear-gradient(90deg, var(--accent), var(--accent2));
-	transition: width .15s ease-out;
-}
-
-/* Couleur de la barre selon l'onglet actif */
-.progress-fill-extract { background: linear-gradient(90deg, var(--accent-extract), var(--accent-extract2)); }
-.progress-fill-rotate  { background: linear-gradient(90deg, var(--accent-rotate),  var(--accent-rotate2));  }
-.progress-fill-delete  { background: linear-gradient(90deg, var(--accent-delete),  var(--accent-delete2));  }
-.progress-fill-reorder { background: linear-gradient(90deg, var(--accent-reorder), var(--accent-reorder2)); }
-
-.progress-label {
-	font-size: .75rem;
-	color: var(--muted);
-	display: flex;
-	justify-content: space-between;
-}
-
-/* Phase "traitement serveur" : animation pulse sur la barre */
-.progress-bar-fill.processing {
-	width: 100% !important;
-	animation: progress-pulse .8s ease-in-out infinite alternate;
-}
-@keyframes progress-pulse {
-	from { opacity: .5; }
-	to   { opacity: 1;  }
-}
-
-/* ── Visibilité des onglets ──────────────────── */
-.tab-content           { display: none; }
-.tab-content.is-active { display: block; }

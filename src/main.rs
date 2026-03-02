@@ -45,7 +45,7 @@ async fn index() -> HttpResponse {
         .insert_header(("Referrer-Policy", "no-referrer"))
         .insert_header((
             "Content-Security-Policy",
-            "default-src 'self'; script-src 'self'; style-src 'self';",
+            "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src blob:;",
         ))
         .body(versioned_html())
 }
