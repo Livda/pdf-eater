@@ -1,8 +1,6 @@
 use actix_multipart::Multipart;
 use actix_web::HttpResponse;
 use futures_util::TryStreamExt;
-use lopdf::Document;
-
 use crate::pdf::merge::merge_documents;
 use crate::{MAX_FILES, MAX_FILE_SIZE};
 
@@ -54,21 +52,9 @@ pub async fn merge_handler(mut payload: Multipart) -> HttpResponse {
             .body("Au moins 2 fichiers PDF sont requis.");
     }
 
-    let mut documents = Vec::new();
-    for (i, data) in pdf_data.iter().enumerate() {
-        match Document::load_mem(data) {
-            Ok(doc) => documents.push(doc),
-            Err(e) => {
-                log::warn!("Fichier PDF #{} invalide : {}", i + 1, e);
-                return HttpResponse::BadRequest()
-                    .body(format!("Fichier #{} invalide ou corrompu.", i + 1));
-            }
-        }
-    }
+    log::info!("Fusion de {} fichiers PDF", pdf_data.len());
 
-    log::info!("Fusion de {} fichiers PDF", documents.len());
-
-    match merge_documents(documents) {
+    match merge_documents(pdf_data) {
         Ok(bytes) => {
             log::info!("Fusion réussie ({} octets)", bytes.len());
             HttpResponse::Ok()
@@ -79,8 +65,8 @@ pub async fn merge_handler(mut payload: Multipart) -> HttpResponse {
         }
         Err(e) => {
             log::error!("Erreur de fusion : {}", e);
-            HttpResponse::InternalServerError()
-                .body("Erreur lors de la fusion des PDF.")
+            HttpResponse::UnprocessableEntity()
+                .body(format!("Impossible de traiter un des fichiers : {}", e))
         }
     }
 }

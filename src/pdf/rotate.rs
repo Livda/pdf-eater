@@ -2,7 +2,7 @@ use lopdf::{Document, Object, ObjectId};
 use std::collections::HashSet;
 
 use super::error::{PdfError, Result};
-use super::utils::{
+use super::utils::{load_document, 
     copy_objects, find_catalog, find_pages_root, finalize,
     insert_catalog, insert_pages_node, set_parent,
 };
@@ -11,7 +11,7 @@ use super::utils::{
 /// Chaque entrée de `rotations` est `(numéro_de_page, angle)` avec angle ∈ {90, 180, 270}.
 /// L'angle est cumulé avec la rotation existante de la page.
 pub fn rotate_pages(data: &[u8], rotations: &[(u32, i64)]) -> Result<Vec<u8>> {
-    let mut src = Document::load_mem(data)?;
+    let mut src = load_document(data)?;
     src.decompress();
 
     let all_pages = src.get_pages();
@@ -74,5 +74,5 @@ fn rebuild(src: Document) -> Result<Vec<u8>> {
         return finalize(&mut out, catalog_id);
     }
 
-    Err(PdfError::Lopdf(lopdf::Error::DictKey))
+    Err(PdfError::Lopdf(lopdf::Error::DictKey("Pages root introuvable".to_owned())))
 }

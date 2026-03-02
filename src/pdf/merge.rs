@@ -1,29 +1,36 @@
 use lopdf::{Document, ObjectId};
 use std::collections::HashSet;
 
-use super::error::Result;
-use super::utils::{copy_objects, find_catalog, find_pages_root, insert_catalog, insert_pages_node, finalize, set_parent};
+use super::error::{PdfError, Result};
+use super::utils::{
+    copy_objects, find_catalog, find_pages_root,
+    finalize, insert_catalog, insert_pages_node,
+    load_document, set_parent,
+};
 
-pub fn merge_documents(documents: Vec<Document>) -> Result<Vec<u8>> {
+/// Fusionne plusieurs PDFs (fournis en bytes bruts) en un seul document.
+/// Le parsing est effectué ici — une seule fois par fichier — pour éviter
+/// les échecs sur les PDFs avec xref en stream (PDF ≥ 1.5, scanners, etc.)
+pub fn merge_documents(files: Vec<Vec<u8>>) -> Result<Vec<u8>> {
     let mut merged = Document::with_version("1.5");
     let mut sub_roots: Vec<ObjectId> = Vec::new();
     let mut total_pages: i64 = 0;
 
-    for mut src in documents {
+    for (i, data) in files.iter().enumerate() {
+        let mut src = load_document(data)
+            .map_err(|e| PdfError::InvalidFile(
+                format!("Fichier #{} invalide ou corrompu : {}", i + 1, e)))?;
         src.decompress();
 
-        // Le Catalog n'est pas utile dans le document fusionné : on l'exclut.
-        // Le nœud Pages racine de chaque source devient un enfant du nouveau
-        // nœud Pages racine commun — ses Kids et Count internes sont conservés.
-        let catalog = find_catalog(&src).into_iter().collect::<HashSet<_>>();
-        let pages_root = find_pages_root(&src);
+        // N'exclure que le Catalog — le nœud Pages racine doit être copié
+        // pour devenir enfant du nouveau Pages racine fusionné.
+        let excluded: HashSet<ObjectId> = find_catalog(&src).into_iter().collect();
 
-        let id_map = copy_objects(&src, &mut merged, &catalog);
+        let id_map = copy_objects(&src, &mut merged, &excluded);
 
-        if let Some(old_root) = pages_root {
+        if let Some(old_root) = find_pages_root(&src) {
             let new_root = id_map[&old_root];
 
-            // Accumule le nombre total de pages feuilles depuis le /Count du sous-arbre
             total_pages += merged
                 .objects
                 .get(&new_root)
@@ -36,8 +43,6 @@ pub fn merge_documents(documents: Vec<Document>) -> Result<Vec<u8>> {
         }
     }
 
-    // Le nouveau Pages root agrège tous les sous-arbres.
-    // On met à jour leur Parent après avoir alloué l'ID du nouveau nœud racine.
     let pages_id = insert_pages_node(&mut merged, &sub_roots, total_pages);
     set_parent(&mut merged, &sub_roots, pages_id);
 

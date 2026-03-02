@@ -19,6 +19,9 @@ pub enum PdfError {
     #[error("Plage de pages invalide : '{0}'")]
     InvalidRange(String),
 
+    #[error("Fichier invalide ou corrompu {0}")]
+    InvalidFile(String),
+
     #[error("Numéro de page invalide : '{0}'")]
     InvalidPageNumber(String),
 

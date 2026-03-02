@@ -2,13 +2,13 @@ use lopdf::{Document, ObjectId};
 use std::collections::HashSet;
 
 use super::error::{PdfError, Result};
-use super::utils::{
+use super::utils::{load_document, 
     copy_objects, find_catalog, find_pages_root, finalize,
     insert_catalog, insert_pages_node, set_parent,
 };
 
 pub fn delete_pages(data: &[u8], page_numbers: &[u32]) -> Result<Vec<u8>> {
-    let mut src = Document::load_mem(data)?;
+    let mut src = load_document(data)?;
     src.decompress();
 
     let all_pages = src.get_pages();

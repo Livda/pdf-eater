@@ -1,7 +1,75 @@
 use lopdf::{Dictionary, Document, Object, ObjectId};
 use std::collections::{HashMap, HashSet};
+use std::io::Write;
 
 use super::error::{PdfError, Result};
+
+// ── Chargement robuste ────────────────────────────────────────────────────────
+
+/// Charge un PDF depuis des bytes en mémoire.
+///
+/// Certains PDFs valides (scanners, exporteurs d'image, iOS…) utilisent
+/// des xref en object streams (PDF 1.5+) que lopdf ne sait pas parser
+/// directement. Si le premier chargement échoue, on tente une normalisation
+/// via `qpdf --object-streams=disable` avant de réessayer.
+///
+/// Si qpdf n'est pas installé ou échoue aussi, l'erreur lopdf originale
+/// est retournée.
+pub fn load_document(data: &[u8]) -> Result<Document> {
+    match Document::load_mem(data) {
+        Ok(doc) => Ok(doc),
+        Err(original_err) => {
+            log::debug!(
+                "lopdf échec direct ({}), tentative de normalisation via qpdf",
+                original_err
+            );
+            match normalize_via_qpdf(data) {
+                Ok(normalized) => {
+                    log::debug!("qpdf normalisation réussie, rechargement lopdf");
+                    Document::load_mem(&normalized).map_err(|_| {
+                        PdfError::Lopdf(original_err)
+                    })
+                }
+                Err(_) => {
+                    log::warn!("qpdf absent ou échec — impossible de normaliser le PDF");
+                    Err(PdfError::Lopdf(original_err))
+                }
+            }
+        }
+    }
+}
+
+/// Normalise un PDF via `qpdf --object-streams=disable`.
+/// Retourne les bytes du PDF normalisé, ou une erreur si qpdf est absent/échoue.
+fn normalize_via_qpdf(data: &[u8]) -> std::result::Result<Vec<u8>, ()> {
+    // Fichier d'entrée temporaire
+    let mut tmp_in = tempfile::NamedTempFile::new().map_err(|_| ())?;
+    tmp_in.write_all(data).map_err(|_| ())?;
+    tmp_in.flush().map_err(|_| ())?;
+
+    // Répertoire de sortie temporaire — qpdf écrit dans un fichier qu'il crée,
+    // évite le problème d'écrasement d'un NamedTempFile déjà existant.
+    let tmp_dir = tempfile::tempdir().map_err(|_| ())?;
+    let tmp_out_path = tmp_dir.path().join("normalized.pdf");
+
+    let status = std::process::Command::new("qpdf")
+        .args([
+            "--object-streams=disable", // convertit les xref streams en xref ASCII
+            "--decode-level=none",      // ne touche pas au contenu des streams
+            "--no-warn",
+            tmp_in.path().to_str().ok_or(())?,
+            tmp_out_path.to_str().ok_or(())?,
+        ])
+        .status()
+        .map_err(|_| ())?; // qpdf absent → Err(())
+
+    if !status.success() {
+        return Err(());
+    }
+
+    std::fs::read(&tmp_out_path).map_err(|_| ())
+    // tmp_dir est drop ici → nettoyage automatique
+}
 
 // ── Remapping d'objets ────────────────────────────────────────────────────────
 
@@ -65,13 +133,11 @@ pub fn copy_objects(
     dst: &mut Document,
     exclude: &HashSet<ObjectId>,
 ) -> HashMap<ObjectId, ObjectId> {
-    // Première passe : allouer les nouveaux IDs
     let mut id_map = HashMap::with_capacity(src.objects.len());
     for &old_id in src.objects.keys() {
         dst.max_id += 1;
         id_map.insert(old_id, (dst.max_id, 0));
     }
-    // Deuxième passe : copier les objets remappés
     for (old_id, object) in &src.objects {
         if exclude.contains(old_id) {
             continue;
@@ -92,8 +158,6 @@ pub fn set_parent(doc: &mut Document, page_ids: &[ObjectId], parent_id: ObjectId
 }
 
 /// Insère un nœud Pages dans `doc` et retourne son ID.
-/// `count` est le nombre total de pages feuilles (peut différer de `kids.len()`
-/// si les kids sont eux-mêmes des nœuds Pages intermédiaires).
 pub fn insert_pages_node(doc: &mut Document, kids: &[ObjectId], count: i64) -> ObjectId {
     let pages_id = alloc_id(doc);
     doc.objects.insert(
@@ -167,7 +231,6 @@ pub fn parse_page_ranges(input: &str) -> Result<Vec<u32>> {
         return Err(PdfError::NoPages);
     }
 
-    // Déduplique en conservant l'ordre de première apparition
     let mut seen = HashSet::new();
     pages.retain(|&p| seen.insert(p));
 
