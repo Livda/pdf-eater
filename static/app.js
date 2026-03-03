@@ -673,3 +673,4 @@ if (document.getElementById('reorder-dropzone')) {
 	});
 
 }
+

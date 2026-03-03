@@ -589,13 +589,32 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	.drag-hint { display: none !important; }
 	.action-btn { font-size: .95rem; padding: .9rem 1rem; }
 	.pdf-preview-frame { height: 320px; }
-	.tab { font-size: .78rem; padding: .55rem .3rem; }
+
+	/* Onglets : 3 colonnes ligne 1, 2 colonnes centrées ligne 2 */
+	.tabs {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: .35rem;
+	}
+	.tab { font-size: .78rem; padding: .55rem .25rem; min-height: 40px; }
+}
+
+@media (max-width: 400px) {
+	/* Écrans très étroits : 2 colonnes, dernier bouton centré */
+	.tabs { grid-template-columns: repeat(2, 1fr); }
+	.tabs .tab:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+		max-width: calc(50% - .175rem);
+		margin: 0 auto;
+	}
+	.tab { font-size: .75rem; }
 }
 
 @media (max-width: 360px) {
 	.card { padding: 1rem .75rem; }
 	.file-size { display: none; }
 	p.subtitle { display: none; }
+	.tab { font-size: .7rem; padding: .5rem .15rem; }
 }
 
 @media (hover: none) {
@@ -606,120 +625,36 @@ p.subtitle { color: var(--muted); font-size: .875rem; margin-top: .4rem; }
 	.add-rotation-btn:hover { border-color: var(--border); color: var(--muted); }
 }
 
-/* ── Visibilité des onglets (CSS-first, indépendant du JS) ── */
-.tab-content          { display: none; }
+/* ── Visibilité des onglets ── */
+.tab-content           { display: none; }
 .tab-content.is-active { display: block; }
 
 /* ── Barre de progression ────────────────────────────────── */
 .progress-wrap {
-	margin-top: 1.25rem;
-	display: none;
+       margin-top: 1.25rem;
+       display: none;
 }
 .progress-wrap.visible { display: block; }
 
 .progress-bar {
-	height: 8px;
-	background: var(--surface2);
-	border-radius: 999px;
-	overflow: hidden;
-	border: 1px solid var(--border);
+       height: 8px;
+       background: var(--surface2);
+       border-radius: 999px;
+       overflow: hidden;
+       border: 1px solid var(--border);
 }
 .progress-bar-fill {
-	height: 100%;
-	width: 0%;
-	border-radius: 999px;
-	background: linear-gradient(90deg, var(--accent), var(--accent2));
-	transition: width .25s ease;
+       height: 100%;
+       width: 0%;
+       border-radius: 999px;
+       background: linear-gradient(90deg, var(--accent), var(--accent2));
+       transition: width .25s ease;
 }
 .progress-bar-fill.processing {
-	animation: progress-pulse 1.2s ease-in-out infinite;
+       animation: progress-pulse 1.2s ease-in-out infinite;
 }
 .progress-fill-extract { background: linear-gradient(90deg, var(--accent-extract),  var(--accent-extract2)); }
 .progress-fill-rotate  { background: linear-gradient(90deg, var(--accent-rotate),   var(--accent-rotate2));  }
 .progress-fill-delete  { background: linear-gradient(90deg, var(--accent-delete),   var(--accent-delete2));  }
-.progress-fill-reorder { background: linear-gradient(90deg, var(--accent),          var(--accent2));          }
+.progress-fill-reorder { background: linear-gradient(90deg, var(--accent),          var(--accent2));         }
 
-@keyframes progress-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
-
-.progress-label {
-	display: flex;
-	justify-content: flex-end;
-	font-size: .75rem;
-	color: var(--muted);
-	margin-top: .3rem;
-}
-
-/* ── Bouton réorganiser ──────────────────────────────────── */
-.reorder-btn {
-	background: linear-gradient(135deg, var(--accent), var(--accent2));
-	color: #fff;
-	box-shadow: var(--shadow-btn);
-}
-.reorder-btn:hover:not(:disabled) { box-shadow: var(--shadow-btn-hover); }
-
-/* ── Page cards (réorganisation) ─────────────────────────── */
-#reorder-list { display: flex; flex-direction: column; margin-top: .75rem; }
-
-.page-card {
-	display: flex;
-	align-items: center;
-	gap: .6rem;
-	background: var(--surface2);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: .65rem .9rem;
-	margin-bottom: .5rem;
-	transition: border-color .2s, box-shadow .2s, opacity .2s, background .3s;
-}
-.page-card.draggable-desktop         { cursor: grab; }
-.page-card.draggable-desktop:active  { cursor: grabbing; }
-.page-card.dragging  { opacity: .4; }
-.page-card.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,99,255,.3); }
-
-.page-card-num {
-	width: 28px; height: 28px;
-	border-radius: 50%;
-	background: linear-gradient(135deg, var(--accent), var(--accent2));
-	color: #fff;
-	font-size: .78rem;
-	font-weight: 700;
-	display: flex; align-items: center; justify-content: center;
-	flex-shrink: 0;
-}
-.page-card-label {
-	flex: 1;
-	font-size: .82rem;
-	color: var(--text);
-	min-width: 0;
-}
-.page-card-orig {
-	font-size: .72rem;
-	color: var(--accent2);
-	flex-shrink: 0;
-	white-space: nowrap;
-}
-.page-card-order-btns {
-	display: none;
-	flex-direction: column;
-	gap: 2px;
-	flex-shrink: 0;
-}
-.page-card-order-btn {
-	background: none;
-	border: 1px solid var(--border);
-	border-radius: 5px;
-	color: var(--muted);
-	cursor: pointer;
-	font-size: .65rem;
-	padding: 3px 5px;
-	transition: background .15s, color .15s, border-color .15s;
-	-webkit-tap-highlight-color: transparent;
-	touch-action: manipulation;
-	min-width: 26px; min-height: 22px;
-	display: flex; align-items: center; justify-content: center;
-}
-.page-card-order-btn:active { background: var(--accent); color: white; border-color: var(--accent); }
-
-@media (max-width: 480px) {
-	.page-card-order-btns { display: flex; }
-}
